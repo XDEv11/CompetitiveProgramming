@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <functional>
-#include <optional>
 
 using namespace std;
 
@@ -16,7 +15,7 @@ class SGT {
 
     // associative function for SGT
     function<T(const T&, const T&)> merge;
-    void modify(int p, T x, int tv, int tl, int tr) {
+    void modify(int p, const T& x, int tv, int tl, int tr) {
         if (tl == tr - 1) t[tv] = x;
         else {
             int tm{(tl + tr) / 2}, lc{left(tv)}, rc{right(tv, tl, tm)};
@@ -36,22 +35,15 @@ class SGT {
 public:
     explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n - 1), merge(m) {}
     explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    void modify(int p, T x) { modify(p, x, 0, 0, n); };
-    T query(int l, int r) {
-        if (l >= r) return {}; //
-        return query(l, r, 0, 0, n);
-    } // [l:r)
+    void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
+    T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
 };
 
-int main() {
-	ios_base::sync_with_stdio(0);
-	cin.tie(0);
-	cout.tie(0);
-
+void solve() {
 	int n, m;
 	cin >> n >> m;
 
-	SGT<long long> sgt{n, plus<long long>{}};
+	SGT<long long> sgt{n, plus{}};
 	for (int i{0}; i < n; ++i) {
 		long long x;
 		cin >> x;
@@ -59,11 +51,20 @@ int main() {
 	}
 
 	while (m--) {
-		int op, v1, v2;
-		cin >> op >> v1 >> v2;
-		if (op == 1) sgt.modify(v1, v2);
-		else if (op == 2) cout << sgt.query(v1, v2) << endl;
+		int op, var1, var2;
+		cin >> op >> var1 >> var2;
+		if (op == 1) sgt.modify(var1, var2);
+		else if (op == 2) cout << sgt.query(var1, var2) << '\n';
 	}
+}
+
+int main() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(nullptr);
+
+	int t{1};
+	// cin >> t;
+	while (t--) solve();
 	
 	return 0;
 }
