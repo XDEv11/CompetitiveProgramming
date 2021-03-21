@@ -12,14 +12,13 @@ void solve() {
 	for (int i{1}; i <= n; ++i) cin >> tm[i];
 
 	int t{0};
-	for (int i{1}; i <= n; ++i) {
+	for (int i{1}; i < n; ++i) {
 		t += a[i] - b[i - 1] + tm[i];
-		if (i < n) {
-			t += (b[i] - a[i] + 1) / 2;
-			t = max(t, b[i]);
-		}
+		t += (b[i] - a[i] + 1) / 2;
+		t = max(t, b[i]);
 	}
-	cout << t << '\n';
+
+	cout << t + (a[n] - b[n - 1] + tm[n]) << '\n';
 }
 
 int main() {

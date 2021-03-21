@@ -13,8 +13,7 @@ void solve() {
 	int c{0};
 	for (int i{n - 1}; i >= 0; --i) {
 		c = max(c, v[i]);
-		if (c) ans[i] = 1;
-		--c;
+		if (c--) ans[i] = 1;
 	}
 
 	for (auto& x : ans) cout << x << ' ';
