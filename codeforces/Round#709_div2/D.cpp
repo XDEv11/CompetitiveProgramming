@@ -16,6 +16,13 @@ void solve() {
 	vector<int> L(n); iota(L.begin(), L.end(), -1), L[0] = n - 1;
 	vector<int> R(n); iota(R.begin(), R.end(), 1), R[n - 1] = 0;
 
+	auto DEBUG = [&]() {
+		for (auto& x : L) cout << x << ' ';
+		cout << '\n';
+		for (auto& x : R) cout << x << ' ';
+		cout << '\n';
+	};
+
 	vector<int> ans{};
 	queue<int> qu{};
 	for (int i{0}; i < n; ++i) {
@@ -30,6 +37,7 @@ void solve() {
 			++i; // avoid continuing
 		}
 	}
+	DEBUG(); //
 
 	int last{-1};
 	while (!qu.empty()) {
