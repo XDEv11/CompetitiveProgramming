@@ -1,42 +1,30 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <limits>
 
 using namespace std;
 
 // segment tree
 template<typename T>
 class SGT {
-    int n;
-    vector<T> t;
-    inline int left(int tv) { return tv + 1; }
-    // [ tv+1 : tv+2*(tm-tl)-1 ) -> left subtree
-    inline int right(int tv, int tl, int tm) { return tv + 2 * (tm - tl); }
-
-    // associative function for SGT
-    function<T(const T&, const T&)> merge;
-    void modify(int p, const T& x, int tv, int tl, int tr) {
-        if (tl == tr - 1) t[tv] = x;
-        else {
-            int tm{(tl + tr) / 2}, lc{left(tv)}, rc{right(tv, tl, tm)};
-            if (p < tm) modify(p, x, lc, tl, tm);
-            else modify(p, x, rc, tm, tr);
-            t[tv] = merge(t[lc], t[rc]);
-        }
-    }
-    T query(int l, int r, int tv, int tl, int tr) {
-        if (l == tl && r == tr) return t[tv];
-        int tm{(tl + tr) / 2};
-        if (r <= tm) return query(l, r, left(tv), tl, tm);
-        else if (l >= tm) return query(l, r, right(tv, tl, tm), tm, tr);
-        else return merge(query(l, tm, left(tv), tl, tm)
-                , query(tm, r, right(tv, tl, tm), tm, tr));
-    }
+	int n;
+	vector<T> t; // root starts at 1
+	// associative function for SGT
+	function<T(const T&, const T&)> merge;
 public:
-    explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
-    T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
+	explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n), merge(m) {}
+	explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n), merge(m) {}
+	void modify(int p, const T& x) {
+		for (t[p += n] = x; p > 1; p >>= 1) t[p >> 1] = merge(t[p], t[p ^ 1]);
+	}
+	T query(int l, int r, T init) { // [l:r)
+		for (l += n, r += n; l < r; l >>= 1, r >>= 1) {
+			if (l & 1) init = merge(init, t[l++]);
+			if (r & 1) init = merge(init, t[--r]);
+		}
+		return init;
+	}
 };
 
 void solve() {
@@ -54,7 +42,7 @@ void solve() {
 		int op, var1, var2;
 		cin >> op >> var1 >> var2;
 		if (op == 1) sgt.modify(var1, var2);
-		else if (op == 2) cout << sgt.query(var1, var2) << '\n';
+		else if (op == 2) cout << sgt.query(var1, var2, numeric_limits<int>::max()) << '\n';
 	}
 }
 
