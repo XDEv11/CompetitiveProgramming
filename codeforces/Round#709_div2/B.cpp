@@ -17,6 +17,7 @@ void solve() {
 		s.insert(v[i] - v[i - 1]);
 	}
 	if (flag) return cout << "0\n", []{}();
+
 	// set size must be greater or equal to 2
 	if (s.size() > 2 || *s.begin() >= 0) return cout << "-1\n", []{}();
 

@@ -5,25 +5,22 @@
 using namespace std;
 
 // segment tree
-template<typename T>
+template<typename type, class merge_t>
 class SGT {
 	int n;
-	vector<T> t; // root starts at 1
-	// associative function for SGT
-	function<T(const T&, const T&)> merge;
+	vector<type> t; // root starts at 1
+	merge_t merge; // associative function for SGT 
 public:
-	explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n), merge(m) {}
-	explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n), merge(m) {}
-	void modify(int p, const T& x) {
+	explicit SGT(int _n, const merge_t& _merge = merge_t{}) : n{_n}, t(2 * n), merge{_merge} {}
+	void modify(int p, const type& x) {
 		for (t[p += n] = x; p > 1; p >>= 1) t[p >> 1] = merge(t[p], t[p ^ 1]);
 	}
-	T query(int l, int r) { // [l:r)
-		T res{};
+	type query(int l, int r, type init) { // [l:r)
 		for (l += n, r += n; l < r; l >>= 1, r >>= 1) {
-			if (l & 1) res = merge(res, t[l++]);
-			if (r & 1) res = merge(res, t[--r]);
+			if (l & 1) init = merge(init, t[l++]);
+			if (r & 1) init = merge(init, t[--r]);
 		}
-		return res;
+		return init;
 	}
 };
 
@@ -31,7 +28,7 @@ void solve() {
 	int n, m;
 	cin >> n >> m;
 
-	SGT<long long> sgt{n, plus{}};
+	SGT<long long, plus<long long>> sgt{n};
 	for (int i{0}; i < n; ++i) {
 		long long x;
 		cin >> x;
@@ -42,7 +39,7 @@ void solve() {
 		int op, var1, var2;
 		cin >> op >> var1 >> var2;
 		if (op == 1) sgt.modify(var1, var2);
-		else if (op == 2) cout << sgt.query(var1, var2) << '\n';
+		else if (op == 2) cout << sgt.query(var1, var2, 0) << '\n';
 	}
 }
 

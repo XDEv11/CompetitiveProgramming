@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
-#include <queue>
 #include <numeric>
+#include <list>
+#include <iterator>
 
 using namespace std;
 
@@ -11,55 +12,33 @@ void solve() {
 	vector<int> v(n);
 	for (auto& x : v) cin >> x;
 
-	if (n == 1 && v[0] == 1) return cout << "1 1\n", []{}();
-
-	vector<int> L(n); iota(L.begin(), L.end(), -1), L[0] = n - 1;
-	vector<int> R(n); iota(R.begin(), R.end(), 1), R[n - 1] = 0;
-
-	auto DEBUG = [&]() {
-		for (auto& x : L) cout << x << ' ';
-		cout << '\n';
-		for (auto& x : R) cout << x << ' ';
-		cout << '\n';
-	};
-
 	vector<int> ans{};
-	queue<int> qu{};
-	for (int i{0}; i < n; ++i) {
-		int next{(i + 1) % n};
-		if (gcd(v[i], v[next]) == 1) {
-			ans.push_back(next); // delete next
 
-			R[i] = R[next];
-			L[R[i]] = i;
-			L[next] = R[next] = -1;
-			qu.push(R[i]);
-			++i; // avoid continuing
-		}
+	list<int> rlst{}; // remaining list
+	for (int i{0}; i < n; ++i) rlst.push_back(i);
+	list<typename decltype(rlst)::iterator> dlst{}; // list going to be deleted
+	for (auto it{rlst.begin()}; it != rlst.end(); ++it) {
+		auto nxt{next(it) == rlst.end() ? rlst.begin() : next(it)};
+		if (gcd(v[*it], v[*nxt]) == 1) dlst.push_back(nxt);
 	}
-	DEBUG(); //
 
-	int last{-1};
-	while (!qu.empty()) {
-		int i{qu.front()}; qu.pop();
-		int prev{L[i]};
-		if (prev == last) { // continuing
-			qu.push(i);
-			last = -1;
-			continue;
-		}
-		last = -1;
+	auto it{dlst.begin()};
+	while (!dlst.empty()) {
+		// x - y - z
+		auto y{*it};
+		auto x{prev(*it == rlst.begin() ? rlst.end() : *it)};
+		auto z{(next(*it) == rlst.end() ? rlst.begin() : next(*it))};
+		
+		ans.push_back(*y);
+		rlst.erase(y), it = dlst.erase(it); // due to (x, y)
+		if (it == dlst.end()) it = dlst.begin();
+		if (rlst.empty()) break;
 
-		if (gcd(v[prev], v[i]) == 1) {
-			last = prev;
-			ans.push_back(i); // delete i
+		if (!dlst.empty() && *it == z) it = dlst.erase(it); // if (y, z)
+		if (it == dlst.end()) it = dlst.begin();
 
-			if (R[i] == i) break; // only one left
-			R[prev] = R[i];
-			L[R[prev]] = prev;
-			L[i] = R[i] = -1;
-			qu.push(R[prev]);
-		}
+		if (gcd(v[*x], v[*z]) == 1)
+			it = dlst.insert(it, z), it = (next(it) == dlst.end() ? dlst.begin() : next(it)); // if (x, z)
 	}
 
 	cout << ans.size() << ' ';

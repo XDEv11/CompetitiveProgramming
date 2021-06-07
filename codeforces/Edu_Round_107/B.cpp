@@ -8,9 +8,12 @@ void solve() {
 
 	cout << '1';
 	for (int i{0}; i < a - 1; ++i) cout << '0';
+
 	cout << ' ';
+
 	for (int i{0}; i < b - c + 1; ++i) cout << '1';
 	for (int i{0}; i < c - 1; ++i) cout << '0';
+
 	cout << '\n';
 }
 
