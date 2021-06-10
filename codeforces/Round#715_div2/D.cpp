@@ -20,9 +20,8 @@ void solve() {
 
 	string ans{};
 	for (int i{0}; i < 3; ++i)
-		for (int j{0}; j < 3; ++j) {
-			if (j == i) continue;
-			char m{'\0'};
+		for (int j{i + 1}; j < 3; ++j) {
+			char m{0};
 			if (c[i] >= n && c[j] >= n) m = '1';
 			else if (c[i] <= n && c[j] <= n) m = '0';
 			if (m) {

@@ -11,7 +11,7 @@ static inline bool ask(int u, int v) {
 	return cin >> ret, ret == "Yes"s;
 }
 
-static inline void ans(int a, int b) {
+static inline void answer(int a, int b) {
 	cout << "! "s << a + 1 << ' ' << b + 1 << endl;
 }
 
@@ -31,9 +31,38 @@ void solve() {
 
 	for (auto& [_, p] : v) {
 		auto& [a, b]{p};
-		if (ask(b, a)) return ans(b, a);
+		if (ask(b, a)) return answer(b, a);
 	}
-	ans(-1, -1);
+	answer(-1, -1);
+}
+
+/* https://codeforces.com/blog/entry/89137?#comment-775682 (dengyaotriangle) */
+
+#define fi first
+#define se second
+
+void solve2() {
+	int n;
+	cin >> n;
+	vector<pair<int, int>> v(n);
+	for (int i{0}; i < n; ++i) {
+		cin >> v[i].fi;
+		v[i].se = i;
+	}
+	sort(v.begin(), v.end());
+
+	int sum{0}, fst{0};
+	pair<int, pair<int, int>> ans{-1, {-1, -1}};
+	for (int i{0}; i < n; ++i) {
+		sum += v[i].fi;
+		if (sum == (i + 1) * i / 2) { // last node of a SCC
+			if (fst != i && v[i].fi - v[fst].fi > ans.fi) // more than one node in this SCC
+				ans = {v[i].fi - v[fst].fi, {v[fst].se, v[i].se}};
+
+			fst = i + 1; // first node of next SCC
+		}
+	}
+	answer(ans.se.fi, ans.se.se);
 }
 
 int main() {
@@ -42,7 +71,7 @@ int main() {
 	
 	int t{1};
 	//cin >> t;
-	while (t--) solve();
+	while (t--) solve2();
 
 	return 0;
 }

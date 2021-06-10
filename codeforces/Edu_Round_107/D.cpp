@@ -1,23 +1,38 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <array>
 
 using namespace std;
 
-void solve() {
+// Eulerian cycle
+namespace D {
 	int n, k;
-	cin >> n >> k;
+	array<int, 26> nxt;
+	vector<int> cycle{};
 
-	vector<int> v(k); iota(v.begin(), v.end(), 0);
-	int x{0};
-	while (n--) {
-		cout << char('a' + x);
-		auto t = v[x];
-		if (x) v[x] = (v[x] - 1 + k) % k;
-		else v[0] = (v[0] + 1) % k;
-		x = t;
+	void dfs(int u) {
+		while (nxt[u] < k) {
+			int v{nxt[u]++};
+			dfs(v);
+			cycle.push_back(v);
+		}
 	}
-	cout << '\n';
+
+	void solve() {
+		cin >> n >> k;
+		fill(nxt.begin(), nxt.end(), 0);
+		cycle.clear();
+
+		dfs(0);
+
+		int i{0};
+		while (n--) {
+			cout << char('a' + cycle[i]);
+			i = (i + 1) % cycle.size();
+		}
+		cout << '\n';
+	}
 }
 
 int main() {
@@ -26,7 +41,7 @@ int main() {
 	
 	int t{1};
 	//cin >> t;
-	while (t--) solve();
+	while (t--) D::solve();
 
 	return 0;
 }
