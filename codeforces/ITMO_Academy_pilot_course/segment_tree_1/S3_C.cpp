@@ -37,18 +37,6 @@ public:
     explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
     void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
     T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
-
-	T binary_search_on_tree(T x) { // assume merge is +
-		// first position from the end s.t. suffix sum >= x
-		if (t[0] < x) return -1;
-		int tv{0}, tl{0}, tr{n};
-		while (tr - tl > 1) {
-			int tm{(tl + tr) / 2};
-			if (t[right(tv, tl, tm)] >= x) tv = right(tv, tl, tm), tl = tm;
-			else x -= t[right(tv, tl, tm)], tv = left(tv), tr = tm;
-		}
-		return tl;
-	}
 };
 
 void solve() {

@@ -1,78 +1,64 @@
 #include <iostream>
 #include <vector>
-#include <functional>
 
 using namespace std;
 
-// segment tree
-template<typename T>
+template<typename value_t, class merge_t>
 class SGT {
     int n;
-    vector<T> t;
-    inline int left(int tv) { return tv + 1; }
-    // [ tv+1 : tv+2*(tm-tl)-1 ) -> left subtree
-    inline int right(int tv, int tl, int tm) { return tv + 2 * (tm - tl); }
-
-    // associative function for SGT
-    function<T(const T&, const T&)> merge;
-    void modify(int p, const T& x, int tv, int tl, int tr) {
-        if (tl == tr - 1) t[tv] = x;
-        else {
-            int tm{(tl + tr) / 2}, lc{left(tv)}, rc{right(tv, tl, tm)};
-            if (p < tm) modify(p, x, lc, tl, tm);
-            else modify(p, x, rc, tm, tr);
-            t[tv] = merge(t[lc], t[rc]);
-        }
-    }
-    T query(int l, int r, int tv, int tl, int tr) {
-        if (l == tl && r == tr) return t[tv];
-        int tm{(tl + tr) / 2};
-        if (r <= tm) return query(l, r, left(tv), tl, tm);
-        else if (l >= tm) return query(l, r, right(tv, tl, tm), tm, tr);
-        else return merge(query(l, tm, left(tv), tl, tm)
-                , query(tm, r, right(tv, tl, tm), tm, tr));
-    }
+    vector<value_t> t; // root starts at 1
+    merge_t merge; // associative function for SGT
 public:
-    explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
-    T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
+    explicit SGT(int _n = 0, const merge_t& _merge = merge_t{})
+        : n{_n}, t(2 * n), merge{_merge} {}
+    void modify(int p, const value_t& x) {
+        for (t[p += n] = x; p > 1; p >>= 1)
+			if (p & 1) t[p >> 1] = merge(t[p - 1], t[p]);
+			else t[p >> 1] = merge(t[p], t[p + 1]);
+    }
+    value_t query(int l, int r, value_t init) { // [l:r)
+		value_t L{init}, R{init};
+        for (l += n, r += n; l < r; l >>= 1, r >>= 1) {
+            if (l & 1) L = merge(L, t[l++]);
+            if (r & 1) R = merge(t[--r], R);
+        }
+        return merge(L, R);
+    }
 };
 
 void solve() {
 	int n, m;
 	cin >> n >> m;
 
-	struct data_t {
-		long long pre, suf, tot, mx;
-		data_t()=default;
-		data_t(long long x) : pre{max(0ll, x)}, suf{pre}, tot{x}, mx{pre} {}
+	struct value_t {
+		long long sum, pre, suf, mx;
+		value_t()=default;
+		value_t(long long x) : sum{x}, pre{x}, suf{x}, mx{x} {}
 	};
-
-	SGT<data_t> sgt{
-		n,
-		[](const data_t& x, const data_t& y) -> data_t { // assume x is left child
-			data_t res;
-			res.pre = max(x.pre, x.tot + y.pre);
-			res.suf = max(x.suf + y.tot, y.suf);
-			res.tot = x.tot + y.tot;
+	struct merge_t {
+		value_t operator()(const value_t& x, const value_t& y) {
+			value_t res{};
+			res.sum = x.sum + y.sum;
+			res.pre = max(x.pre, x.sum + y.pre);
+			res.suf = max(x.suf + y.sum, y.suf);
 			res.mx = max(max(x.mx, y.mx), x.suf + y.pre);
 			return res;
 		}
 	};
 
+	SGT<value_t, merge_t> sgt{n};
 	for (int i{0}; i < n; ++i) {
-		int x;
+		long long x;
 		cin >> x;
 		sgt.modify(i, x);
 	}
 	
-	cout << sgt.query(0, n).mx << '\n';
+	cout << sgt.query(0, n, 0).mx << '\n';
 	while (m--) {
-		int i; long long v;
-		cin >> i >> v;
-		sgt.modify(i, v);
-		cout << sgt.query(0, n).mx << '\n';
+		int i; long long x;
+		cin >> i >> x;
+		sgt.modify(i, x);
+		cout << sgt.query(0, n, 0).mx << '\n';
 	}
 }
 

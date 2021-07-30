@@ -4,65 +4,57 @@
 
 using namespace std;
 
-// segment tree
-template<typename T>
+template<typename value_t, class merge_t>
 class SGT {
     int n;
-    vector<T> t;
-    inline int left(int tv) { return tv + 1; }
-    // [ tv+1 : tv+2*(tm-tl)-1 ) -> left subtree
-    inline int right(int tv, int tl, int tm) { return tv + 2 * (tm - tl); }
-
-    // associative function for SGT
-    function<T(const T&, const T&)> merge;
-    void modify(int p, const T& x, int tv, int tl, int tr) {
-        if (tl == tr - 1) t[tv] = x;
-        else {
-            int tm{(tl + tr) / 2}, lc{left(tv)}, rc{right(tv, tl, tm)};
-            if (p < tm) modify(p, x, lc, tl, tm);
-            else modify(p, x, rc, tm, tr);
-            t[tv] = merge(t[lc], t[rc]);
-        }
-    }
-    T query(int l, int r, int tv, int tl, int tr) {
-        if (l == tl && r == tr) return t[tv];
-        int tm{(tl + tr) / 2};
-        if (r <= tm) return query(l, r, left(tv), tl, tm);
-        else if (l >= tm) return query(l, r, right(tv, tl, tm), tm, tr);
-        else return merge(query(l, tm, left(tv), tl, tm)
-                , query(tm, r, right(tv, tl, tm), tm, tr));
-    }
+    vector<value_t> t; // root starts at 1
+    merge_t merge; // associative function for SGT
 public:
-    explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
-    T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
+    explicit SGT(int _n = 0, const merge_t& _merge = merge_t{})
+        : n{_n}, t(2 * n), merge{_merge} {}
+    void build(const vector<value_t>& v) {
+        n = v.size(), t.resize(2 * n);
+        for (int p{2 * n - 1}; p >= n; --p) t[p] = v[p - n];
+        for (int p{n - 1}; p >= 0; --p) t[p] = merge(t[p << 1], t[(p << 1) + 1]);
+    }
+    void modify(int p, const value_t& x) {
+        for (t[p += n] = x; p > 1; p >>= 1) t[p >> 1] = merge(t[p], t[p ^ 1]);
+    }
+    value_t query(int l, int r, value_t init) { // [l:r)
+        for (l += n, r += n; l < r; l >>= 1, r >>= 1) {
+            if (l & 1) init = merge(init, t[l++]);
+            if (r & 1) init = merge(init, t[--r]);
+        }
+        return init;
+    }
 };
 
 void solve() {
-	int n;
-	cin >> n;
-	vector<int> p(n);
-	for (auto& x : p) cin >> x, --x; // a permutation from 0 to n-1
+    int n;
+    cin >> n;
+    vector<int> v(n);
+    for (auto& x : v) cin >> x;
 
-	SGT<int> sgt{n, plus{}};
-	vector<int> inv(n);
-	for (int i{0}; i < n; ++i) {
-		if (p[i] + 1 < n) inv[i] = sgt.query(p[i] + 1, n);
-		sgt.modify(p[i], 1);
-	}
+    SGT<int, plus<int>> sgt{};
+    sgt.build(vector<int>(n + 1, 0));
 
-	for (auto& x : inv) cout << x << ' ';
-	cout << '\n';
+    vector<int> inv(n);
+    for (int i{0}; i < n; ++i) {
+		inv[i] = sgt.query(v[i] + 1, n + 1, 0);
+        sgt.modify(v[i], sgt.query(v[i], v[i] + 1, 0) + 1);
+    }
+
+    for (auto& x : inv) cout << x << ' ';
+    cout << '\n';
 }
 
 int main() {
-	ios_base::sync_with_stdio(false);
-	cin.tie(nullptr);
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
 
-	int t{1};
-	// cin >> t;
-	while (t--) solve();
-	
-	return 0;
+    int t{1};
+    // cin >> t;
+    while (t--) solve();
+    
+    return 0;
 }

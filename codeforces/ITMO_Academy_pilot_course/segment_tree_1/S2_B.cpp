@@ -4,70 +4,61 @@
 
 using namespace std;
 
-// segment tree
-template<typename T>
 class SGT {
     int n;
-    vector<T> t;
-    inline int left(int tv) { return tv + 1; }
-    // [ tv+1 : tv+2*(tm-tl)-1 ) -> left subtree
-    inline int right(int tv, int tl, int tm) { return tv + 2 * (tm - tl); }
-
-    // associative function for SGT
-    function<T(const T&, const T&)> merge;
-    void modify(int p, const T& x, int tv, int tl, int tr) {
-        if (tl == tr - 1) t[tv] = x;
+    vector<int> t;
+    int left(int tv) { return tv + 1; }
+    int right(int tv, int tl, int tm) { return tv + 2 * (tm - tl); }
+    void build(const vector<int>& v, int tv, int tl, int tr) {
+        if (tr - tl == 1) t[tv] = v[tl];
         else {
-            int tm{(tl + tr) / 2}, lc{left(tv)}, rc{right(tv, tl, tm)};
-            if (p < tm) modify(p, x, lc, tl, tm);
-            else modify(p, x, rc, tm, tr);
-            t[tv] = merge(t[lc], t[rc]);
+            int tm{(tl + tr) / 2};
+            build(v, left(tv), tl, tm);
+            build(v, right(tv, tl, tm), tm, tr);
+            t[tv] = t[left(tv)] + t[right(tv, tl, tm)];
         }
     }
-    T query(int l, int r, int tv, int tl, int tr) {
-        if (l == tl && r == tr) return t[tv];
-        int tm{(tl + tr) / 2};
-        if (r <= tm) return query(l, r, left(tv), tl, tm);
-        else if (l >= tm) return query(l, r, right(tv, tl, tm), tm, tr);
-        else return merge(query(l, tm, left(tv), tl, tm)
-                , query(tm, r, right(tv, tl, tm), tm, tr));
+    void flip(int p, int tv, int tl, int tr) {
+        if (tr - tl == 1) t[tv] = (t[tv] == 0 ? 1 : 0);
+        else {
+            int tm{(tl + tr) / 2};
+            if (p < tm) flip(p, left(tv), tl, tm);
+            else flip(p, right(tv, tl, tm), tm, tr);
+            t[tv] = t[left(tv)] + t[right(tv, tl, tm)];
+        }
     }
 public:
-    explicit SGT(int _n, const decltype(merge)& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    explicit SGT(int _n, decltype(merge)&& m) : n{_n}, t(2 * n - 1), merge(m) {}
-    void modify(int p, const T& x) { modify(p, x, 0, 0, n); };
-    T query(int l, int r) { return query(l, r, 0, 0, n); } // [l:r)
-
-	T binary_search_on_tree(T x) { // assume merge is +
-		// first position s.t. prefix sum >= x
-		if (t[0] < x) return n;
-		int tv{0}, tl{0}, tr{n};
-		while (tr - tl > 1) {
-			int tm{(tl + tr) / 2};
-			if (t[left(tv)] >= x) tv = left(tv), tr = tm;
-			else x -= t[left(tv)], tv = right(tv, tl, tm), tl = tm;
-		}
-		return tl;
-	}
+    SGT(const vector<int>& v) : n{v.size()}, t(2 * n) {
+        build(v, 1, 0, n);
+    }
+    void flip(int p) {
+        flip(p, 1, 0, n);
+    };
+    int ps_lower_bound(int ps) { // prefix sum lower bound
+        if (t[1] < ps) return n;
+        int tv{1}, tl{0}, tr{n};
+        while (tr - tl > 1) {
+            int tm{(tl + tr) / 2};
+            if (t[left(tv)] >= ps) tv = left(tv), tr = tm;
+            else ps -= t[left(tv)], tv = right(tv, tl, tm), tl = tm;
+        }
+        return tl;
+    }
 };
 
 void solve() {
 	int n, m;
 	cin >> n >> m;
+	vector<int> v(n);
+	for (auto& x : v) cin >> x;
 
-	SGT<int> sgt{n, plus{}};
-
-	for (int i{0}; i < n; ++i) {
-		int x;
-		cin >> x;
-		sgt.modify(i, x);
-	}
+	SGT sgt{v};
 
 	while (m--) {
 		int op, var;
 		cin >> op >> var;
-		if (op == 1) sgt.modify(var, (sgt.query(var, var + 1) == 0 ? 1 : 0)); // flip
-		else if (op == 2) cout << sgt.binary_search_on_tree(var + 1) << '\n'; // k-th one (actually (k+1)-th)
+		if (op == 1) sgt.flip(var);
+		else if (op == 2) cout << sgt.ps_lower_bound(var + 1) << '\n'; // k-th one (actually (k+1) one's)
 	}
 }
 
